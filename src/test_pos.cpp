@@ -32,14 +32,28 @@
 #include <dlib/image_processing/frontal_face_detector.h>
 #include <dlib/image_processing/render_face_detections.h>
 #include <dlib/gui_widgets.h>
+#include <iostream>
+#include <fstream>
 
 using namespace dlib;
 using namespace std;
 
-int main()
+int main(int argc, char** argv)
 {
+
+    if (argc == 1){
+        cout << "need destination to record the activity" << endl;
+        return 0;
+    }
+
     try
     {
+
+        ofstream myfile;
+        auto filename = argv[1];
+        myfile.open (filename);
+        std::vector<full_object_detection> contacts;
+
         cv::VideoCapture cap(0);
         image_window win;
 
@@ -103,19 +117,35 @@ int main()
                 auto southnorth = sh*h/a;
 
 
-                auto look_left = estwest>0.3;
-                auto look_right = estwest<-0.3;
-                auto look_up = southnorth>0.3;
-                auto look_down = southnorth<-0.3;
+                auto look_left = estwest>0.2;
+                auto look_right = estwest<-0.2;
+                auto look_up = southnorth>0.2;
+                auto look_down = southnorth<-0.2;
 
-                if(look_left)
-                    cout << "face " << i << " look left" << endl;
-                if(look_right)
-                    cout << "face " << i << " look right" << endl;
-                if(look_up)
-                    cout << "face " << i << " look up" << endl;
-                if(look_down)
-                    cout << "face " << i << " look down" << endl;
+                auto contact = true;
+
+                if(look_left){
+                    cout << "face " << i << " look left" << endl; 
+                    contact=false;
+                }
+                if(look_right){
+                    cout << "face " << i << " look right" << endl; 
+                    contact=false;
+                }
+                if(look_up){
+                    cout << "face " << i << " look up" << endl; 
+                    contact=false;
+                }
+                if(look_down){
+                    cout << "face " << i << " look down" << endl; 
+                    contact=false;
+                }
+
+                if(contact){
+                    cout << "contact !!" << endl;
+                    contacts.push_back(pose_model(cimg, faces[i]));
+                }
+
 
 
             }
@@ -129,6 +159,25 @@ int main()
             for( auto side : sides)
                 win.add_overlay(side);
         }
+
+        cout << "please wait, recording the landmark positions during eye_contacts. it could take a while"<< endl;
+        //cout << contacts.size() << endl;
+
+        //auto i = 0;
+        for( auto contact : contacts){
+            //i++;
+            //cout<<i<< "of "<< contacts.size()<<endl;
+            for (unsigned long j = 0; j < contact.num_parts(); ++j){
+                myfile << contact.part(j).x() << " ";
+            }
+            for (unsigned long j = 0; j < contact.num_parts(); ++j){
+                myfile << contact.part(j).y() << " ";
+            }
+            myfile << endl;
+        }
+
+
+        myfile.close();
     }
     catch(serialization_error& e)
     {

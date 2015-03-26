@@ -62,6 +62,12 @@ int main(int argc, char** argv)
         shape_predictor pose_model;
         deserialize("shape_predictor_68_face_landmarks.dat") >> pose_model;
 
+        std::vector<float> EMA(6,1);
+        float threshold = 1;
+        float mu = 0.1;
+        float eps = 0.00000001;
+        float t = 1;
+
         // Grab and process frames until the main window is closed by the user.
         while(!win.is_closed())
         {
@@ -125,30 +131,77 @@ int main(int argc, char** argv)
                 auto contact = true;
 
                 if(look_left){
-                    cout << "face " << i << " look left" << endl; 
+                    //cout << "face " << i << " look left" << endl; 
                     contact=false;
                 }
                 if(look_right){
-                    cout << "face " << i << " look right" << endl; 
+                    //cout << "face " << i << " look right" << endl; 
                     contact=false;
                 }
                 if(look_up){
-                    cout << "face " << i << " look up" << endl; 
+                    //cout << "face " << i << " look up" << endl; 
                     contact=false;
                 }
                 if(look_down){
-                    cout << "face " << i << " look down" << endl; 
+                   // cout << "face " << i << " look down" << endl; 
                     contact=false;
                 }
 
                 if(contact){
-                    cout << "contact !!" << endl;
+                    //cout << "contact !!" << endl;
                     contacts.push_back(pose_model(cimg, faces[i]));
                 }
 
+                std::vector<float> X(6,0);
+                X[0] = float(look_right);
+                X[1] = float(look_left);
+                X[2] = float(look_up);
+                X[3] = float(look_down);
+                X[4] = float(contact);
+                X[5] = float(faces.size());
 
+                auto temp = EMA;
+
+                for (unsigned int j = 0; j < EMA.size(); ++j){
+                    EMA[j] = mu*X[j] + (1-mu)*EMA[j];
+                }
+
+                float dist = 0.0;
+
+                for (unsigned int j = 0; j < EMA.size(); ++j){
+                    dist += 2*(EMA[j]-temp[j])*(EMA[j]-temp[j]) / ( eps+(EMA[j]+temp[j])*(EMA[j]+temp[j]) );
+                }
+                if( dist>threshold){
+                    cout <<"novelty ! :"<< dist*sqrt(t) << endl;
+                    t = 1;
+                }
+                else{
+                    t++;
+                }
 
             }
+            if( faces.size() == 0){
+
+                std::vector<float> X(6,0);
+                auto temp = EMA;
+
+                for (unsigned int j = 0; j < EMA.size(); ++j){
+                    EMA[j] = mu*X[j] + (1-mu)*EMA[j];
+                }
+
+                float dist = 0.0;
+                for (unsigned int j = 0; j < EMA.size(); ++j){
+                    dist += 2*(EMA[j]-temp[j])*(EMA[j]-temp[j]) / ( eps+(EMA[j]+temp[j])*(EMA[j]+temp[j]) );
+                }
+                if( dist>threshold){
+                    cout <<"novelty ! :"<< dist*sqrt(t) << endl;
+                    t = 1;
+                }
+                else{
+                    t++;
+                }
+            }
+
 
             // Display it all on the screen
             win.clear_overlay();
@@ -191,4 +244,3 @@ int main(int argc, char** argv)
         cout << e.what() << endl;
     }
 }
-

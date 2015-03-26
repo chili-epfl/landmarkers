@@ -106,7 +106,17 @@ int main(int argc, char** argv)
                 //get lefts
                 auto x2 = pose_model(cimg, faces[i]).part(14).x();
                 auto y2 = pose_model(cimg, faces[i]).part(14).y();
-                sides.push_back(centered_rect(point(x2-2,y2-2),8,8));
+
+                //get down
+                auto x3 = pose_model(cimg, faces[i]).part(2).x();
+                auto y3 = pose_model(cimg, faces[i]).part(2).y();
+
+                //get up
+                auto x4 = 0.5*( pose_model(cimg, faces[i]).part(21).x() + pose_model(cimg, faces[i]).part(22).x() );
+                auto y4 = 0.5*( pose_model(cimg, faces[i]).part(21).y() + pose_model(cimg, faces[i]).part(22).y() );
+
+
+               sides.push_back(centered_rect(point(x2-2,y2-2),8,8));
 
                 float a = sqrt((x1-x)*(x1-x) + (y1-y)*(y1-y));
                 float b = sqrt((x2-x)*(x2-x) + (y2-y)*(y2-y));
@@ -152,6 +162,14 @@ int main(int argc, char** argv)
                     contacts.push_back(pose_model(cimg, faces[i]));
                 }
 
+                // Compute size of the head
+                float d = sqrt((x3-x4)*(x3-x4) + (y3-y4)*(y3-y4));
+                auto size = c*d;
+                cout << int(size/1000) << endl;
+
+
+                // Compute novelty
+
                 std::vector<float> X(6,0);
                 X[0] = float(look_right);
                 X[1] = float(look_left);
@@ -172,7 +190,7 @@ int main(int argc, char** argv)
                     dist += 2*(EMA[j]-temp[j])*(EMA[j]-temp[j]) / ( eps+(EMA[j]+temp[j])*(EMA[j]+temp[j]) );
                 }
                 if( dist>threshold){
-                    cout <<"novelty ! :"<< dist*sqrt(t) << endl;
+                    //cout <<"novelty ! :"<< dist*sqrt(t) << endl;
                     t = 1;
                 }
                 else{
@@ -194,7 +212,7 @@ int main(int argc, char** argv)
                     dist += 2*(EMA[j]-temp[j])*(EMA[j]-temp[j]) / ( eps+(EMA[j]+temp[j])*(EMA[j]+temp[j]) );
                 }
                 if( dist>threshold){
-                    cout <<"novelty ! :"<< dist*sqrt(t) << endl;
+                    //cout <<"novelty ! :"<< dist*sqrt(t) << endl;
                     t = 1;
                 }
                 else{

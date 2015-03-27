@@ -57,6 +57,10 @@ int main(int argc, char** argv)
         cv::VideoCapture cap(0);
         image_window win;
 
+        int frame_width = cap.get(CV_CAP_PROP_FRAME_WIDTH);
+        int frame_height = cap.get(CV_CAP_PROP_FRAME_HEIGHT);
+        cv::VideoWriter video("out.avi",CV_FOURCC('M','J','P','G'),10, cv::Size(frame_width,frame_height),true);
+
         // Load face detection and pose estimation models.
         frontal_face_detector detector = get_frontal_face_detector();
         shape_predictor pose_model;
@@ -68,12 +72,16 @@ int main(int argc, char** argv)
         float eps = 0.00000001;
         float t = 1;
 
+        auto f = 0;
+
         // Grab and process frames until the main window is closed by the user.
         while(!win.is_closed())
         {
+            f++;
             // Grab a frame
             cv::Mat temp;
             cap >> temp;
+            video.write(temp);
             // Turn OpenCV's Mat into something dlib can deal with.  Note that this just
             // wraps the Mat object, it doesn't copy anything.  So cimg is only valid as
             // long as temp is valid.  Also don't do anything to temp that would cause it
@@ -233,6 +241,7 @@ int main(int argc, char** argv)
 
         cout << "please wait, recording the landmark positions during eye_contacts. it could take a while"<< endl;
         //cout << contacts.size() << endl;
+        cout << f << endl;
 
         //auto i = 0;
         for( auto contact : contacts){

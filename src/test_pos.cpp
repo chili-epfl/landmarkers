@@ -34,6 +34,8 @@
 #include <dlib/gui_widgets.h>
 #include <iostream>
 #include <fstream>
+#include <math.h>       /* cos */
+#define PI 3.14159265
 
 using namespace dlib;
 using namespace std;
@@ -90,6 +92,9 @@ int main(int argc, char** argv)
             // while using cimg.
             cv_image<bgr_pixel> cimg(temp);
 
+            long len = cimg.nr();
+            long wid = cimg.nc();
+
             // Detect faces 
             std::vector<rectangle> faces = detector(cimg);
             // Find the pose of each face.
@@ -97,6 +102,7 @@ int main(int argc, char** argv)
 
             std::vector<rectangle> noses;
             std::vector<rectangle> sides;
+            std::vector<rectangle> gazes;
 
             for (unsigned long i = 0; i < faces.size(); ++i){
                 shapes.push_back(pose_model(cimg, faces[i]));
@@ -124,7 +130,7 @@ int main(int argc, char** argv)
                 auto y4 = 0.5*( pose_model(cimg, faces[i]).part(21).y() + pose_model(cimg, faces[i]).part(22).y() );
 
 
-               sides.push_back(centered_rect(point(x2-2,y2-2),8,8));
+                sides.push_back(centered_rect(point(x2-2,y2-2),8,8));
 
                 float a = sqrt((x1-x)*(x1-x) + (y1-y)*(y1-y));
                 float b = sqrt((x2-x)*(x2-x) + (y2-y)*(y2-y));
@@ -139,6 +145,29 @@ int main(int argc, char** argv)
                 auto sh = (yl-y)/abs(y-yl);
                 auto h = sqrt((y-yl)*(y-yl) + (x-xl)*(x-xl));
                 auto southnorth = sh*h/a;
+
+                /////////////////////////////////// here is the trick : ////////////////////////////////
+
+                //hack for southnord between -1 and 1 :
+                if(southnorth>0){
+                    southnorth = southnorth/0.45;
+                }
+                if(southnorth<0){
+                    southnorth = southnorth/0.37;
+                }
+
+                southnorth = -(PI/4)*southnorth;
+                estwest = (PI/3)*estwest;
+
+                // the easiest trick :
+                auto x_gaze = sin(estwest)*len/20;
+                auto y_gaze = sin(southnorth)*wid/20;
+
+                gazes.push_back(centered_rect(point(x+x_gaze,y+y_gaze),8,8));
+
+                /////////////////////////////////////////////////////////////////////////////////////////
+
+                cout << southnorth << endl;
 
 
                 auto look_left = estwest>0.2;
@@ -173,7 +202,7 @@ int main(int argc, char** argv)
                 // Compute size of the head
                 float d = sqrt((x3-x4)*(x3-x4) + (y3-y4)*(y3-y4));
                 auto size = c*d;
-                cout << int(size/1000) << endl;
+                //cout << int(size/1000) << endl;
 
 
                 // Compute novelty
@@ -235,8 +264,10 @@ int main(int argc, char** argv)
             win.add_overlay(render_face_detections(shapes));
             for( auto nose : noses)
                 win.add_overlay(nose);
-            for( auto side : sides)
-                win.add_overlay(side);
+            /*for( auto side : sides)
+                win.add_overlay(side);*/
+            for(auto gaze : gazes)
+                win.add_overlay(gaze);
         }
 
         cout << "please wait, recording the landmark positions during eye_contacts. it could take a while"<< endl;

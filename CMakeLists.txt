@@ -19,12 +19,14 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${CMAKE_SOURCE_DIR}/include)
 # the following line depends on where you installed dlib :
 # include( --path-to-dlib-repository--/dlib/cmake)
-include(~/src/dlib-18.14/dlib/cmake)
+include(/home/alexis/src/dlib-18.15/dlib/cmake)
 
 # executables :
 #--------------
 ADD_EXECUTABLE(head_pos src/test_pos.cpp)
+ADD_EXECUTABLE(eye_pos src/eye_pos.cpp)
 TARGET_LINK_LIBRARIES(head_pos dlib ${OpenCV_LIBS})
+TARGET_LINK_LIBRARIES(eye_pos dlib ${OpenCV_LIBS})
 
 # installation :
 #---------------
